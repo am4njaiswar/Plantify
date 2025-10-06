@@ -1,0 +1,15 @@
+# For mern-backend and mern-frontend
+mern-backend/node_modules/
+mern-frontend/node_modules/
+mern-backend/build/
+mern-frontend/build/
+
+# For PythonApi
+PythonApi/__pycache__/
+PythonApi/venv/
+PythonApi/*.pyc
+
+# General files to ignore in all folders
+.env
+.DS_Store
+npm-debug.log*
