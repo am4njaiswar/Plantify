@@ -1,22 +1,29 @@
-import express from 'express';
-import dotenv from 'dotenv';
-import cors from 'cors';
-import axios from 'axios';
+import express from "express";
+import dotenv from "dotenv";
+import cors from "cors";
+import cookieParser from "cookie-parser";
+import { connectDb } from "./utils/db.js";
+import authRoutes from "./routes/authRoutes.js"; // 1. Import new routes
+import axios from "axios";
+import {protectRoute} from "./middleware/protectRoute.js"
 
-dotenv.config()
+dotenv.config();
+connectDb();
 
-const app = express()
+const app = express();
 
 // --- Middleware ---
-app.use(cors()); //Enables Cors For The React App
-app.use(express.json({ limit: '50mb' }));
+app.use(cors({
+    origin: 'http://localhost:5173',
+    credentials: true
+}));
+app.use(express.json({ limit: "50mb" }));
+app.use(cookieParser());
 
-//Routes
-app.get('/', (req, res) => {
-    res.send('Node.js Proxy Server is running...');
-})
+// --- Routes ---
+app.use("/api/auth", authRoutes); // 2. Use the new prediction routes
 
-app.post('/api/predict', async(req, res) => {
+app.post('/api/predict', protectRoute, async(req, res) => {
     console.log('Received a request on /api/predict');
 
     if(!process.env.PYTHON_API_URL){
@@ -46,7 +53,6 @@ app.post('/api/predict', async(req, res) => {
     }
 });
 
-// --- Start the Server ---
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Node.js proxy server listening on port ${PORT}`);

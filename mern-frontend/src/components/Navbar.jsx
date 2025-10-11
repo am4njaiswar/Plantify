@@ -1,64 +1,80 @@
-import React, { useEffect } from "react";
-import { NavLink } from "react-router-dom";
-import { useThemeStore } from "../store/useThemeStore";
-import { Sun, Moon } from "lucide-react";
+import React from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { useAuth } from '../context/AuthContext'; // 1. Import the Auth context
 
 const Navbar = () => {
-  const { theme, setTheme } = useThemeStore();
+  const location = useLocation();
+  // --- 2. Get auth state and navigation function ---
+  const { authUser, setAuthUser } = useAuth();
+  const navigate = useNavigate();
 
-  // Apply theme to <html> whenever it changes
-  useEffect(() => {
-    if (theme === "dark") {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
+  // --- 3. Create the logout handler ---
+  const handleLogout = async () => {
+    try {
+      // Call the backend logout endpoint
+      await axios.post('http://localhost:5000/api/auth/logout', {}, { withCredentials: true });
+      
+      // Clear user data from local storage and context
+      localStorage.removeItem('user-info');
+      setAuthUser(null);
+      
+      // Redirect to the Home page
+      navigate('/');
+    } catch (error) {
+      console.error('Logout failed:', error);
     }
-  }, [theme]);
-
-  const toggleTheme = () => {
-    const newTheme = theme === "emerald" ? "dark" : "emerald";
-    setTheme(newTheme);
   };
 
-  const getLinkClass = ({ isActive }) =>
-    isActive
-      ? "bg-green-600 text-white shadow-md px-4 py-2 rounded-md text-lg font-medium"
-      : "text-gray-600 hover:bg-green-100 dark:text-gray-300 dark:hover:bg-gray-700 px-4 py-2 rounded-md text-lg font-medium transition-colors duration-300";
+
+  const NavLink = ({ to, children }) => (
+    <Link
+      to={to}
+      className={`px-4 py-2 rounded-lg font-medium transition-all duration-300 ${
+        location.pathname === to
+          ? 'bg-green-600 text-white shadow-lg transform scale-105'
+          : 'text-gray-700 hover:bg-green-100 hover:text-green-800 hover:shadow-md'
+      }`}
+    >
+      {children}
+    </Link>
+  );
 
   return (
-    <nav className="bg-white dark:bg-gray-800 shadow-md sticky top-0 z-10">
+    <nav className="bg-white shadow-lg sticky top-0 z-50 backdrop-blur-sm bg-white/95">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
-          <div className="flex items-center">
-            <NavLink
-              to="/"
-              className="text-2xl font-bold text-green-700 dark:text-green-500"
-            >
-              🌿 Plantify
-            </NavLink>
-          </div>
-          <div className="flex items-center space-x-4">
-            <NavLink to="/" className={getLinkClass}>
-              Predictor
-            </NavLink>
-            <NavLink to="/guide" className={getLinkClass}>
-              Disease Guide
-            </NavLink>
-            <NavLink to="/about" className={getLinkClass}>
-              About
-            </NavLink>
+          
+          {/* Logo */}
+          <Link to="/" className="flex items-center space-x-3 group">
+            {/* ... (your logo JSX) */}
+          </Link>
 
-            {/* Theme toggle button */}
-            <button
-              onClick={toggleTheme}
-              className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-            >
-              {theme === "emerald" ? (
-                <Moon className="h-6 w-6 text-gray-700 dark:text-gray-300" />
-              ) : (
-                <Sun className="h-6 w-6 text-yellow-500" />
-              )}
-            </button>
+          {/* Navigation Links */}
+          <div className="flex items-center space-x-2">
+            <NavLink to="/">Home</NavLink>
+            <NavLink to="/about">About</NavLink>
+            <NavLink to="/contact">Contact</NavLink> {/* <-- ADD THIS LINE */}
+
+            {authUser ? (
+              // --- Logged In View ---
+              <>
+                <NavLink to="/predict">Predictor</NavLink>
+                <span className="px-4 py-2 text-gray-700 font-medium">Hi, {authUser.fullName}</span>
+                <button
+                  onClick={handleLogout}
+                  className="px-4 py-2 rounded-lg font-medium text-red-600 hover:bg-red-100 hover:shadow-md transition-all duration-300"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              // --- Logged Out View ---
+              <>
+                <NavLink to="/login">Login</NavLink>
+                <NavLink to="/signup">Sign Up</NavLink>
+              </>
+            )}
           </div>
         </div>
       </div>
